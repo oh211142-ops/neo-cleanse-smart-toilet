@@ -152,3 +152,63 @@ nextButton.addEventListener('click', () => {
 backButton.addEventListener('click', () => {
   if (currentStep > 0) { currentStep -= 1; renderStep(); }
 });
+
+const videoDialog = document.querySelector('#video-dialog');
+const productVideo = document.querySelector('#product-video');
+const videoClose = videoDialog.querySelector('.video-close');
+const replayButton = videoDialog.querySelector('.video-replay');
+const videoTitle = videoDialog.querySelector('#video-title');
+const videoMeta = videoDialog.querySelector('.video-meta');
+const videoChoices = videoDialog.querySelectorAll('.video-choice');
+
+function selectVideo(choice, shouldPlay = false) {
+  videoChoices.forEach((button) => {
+    const isActive = button === choice;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
+
+  productVideo.pause();
+  productVideo.src = choice.dataset.videoSrc;
+  productVideo.poster = choice.dataset.videoPoster;
+  videoTitle.textContent = choice.dataset.videoTitle;
+  videoMeta.textContent = choice.dataset.videoMeta;
+  productVideo.load();
+
+  if (shouldPlay) {
+    productVideo.play().catch(() => {
+      // Browsers may require the viewer to press play; controls remain visible.
+    });
+  }
+}
+
+function openVideo(event) {
+  const requestedVideo = event.currentTarget.dataset.openVideo;
+  const requestedChoice = [...videoChoices].find((choice) => choice.dataset.videoKey === requestedVideo);
+  if (requestedChoice) selectVideo(requestedChoice);
+  videoDialog.showModal();
+  document.body.classList.add('dialog-open');
+  productVideo.currentTime = 0;
+  productVideo.play().catch(() => {
+    // Browsers may require the viewer to press play; controls remain visible.
+  });
+}
+
+function closeVideo() {
+  productVideo.pause();
+  videoDialog.close();
+  document.body.classList.remove('dialog-open');
+}
+
+document.querySelectorAll('[data-open-video]').forEach((button) => button.addEventListener('click', openVideo));
+videoChoices.forEach((choice) => choice.addEventListener('click', () => selectVideo(choice, true)));
+videoClose.addEventListener('click', closeVideo);
+videoDialog.addEventListener('click', (event) => { if (event.target === videoDialog) closeVideo(); });
+videoDialog.addEventListener('close', () => {
+  productVideo.pause();
+  document.body.classList.remove('dialog-open');
+});
+replayButton.addEventListener('click', () => {
+  productVideo.currentTime = 0;
+  productVideo.play();
+});
